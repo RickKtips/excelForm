@@ -4,19 +4,79 @@ document.addEventListener('DOMContentLoaded', function () {
     var addTimeButton = document.getElementById('add-time');
     var timeFieldsContainer = document.getElementById('time-fields');
     var fileInput = document.getElementById('excel-file');
+    var timeInputCount = 1;
     addTimeButton.addEventListener('click', function () {
         var timeInputContainer = document.createElement('div');
         timeInputContainer.classList.add('time-input');
         var newTimeInput = document.createElement('input');
         newTimeInput.type = 'time';
         newTimeInput.name = 'times[]';
+        var daysOfWeekContainer = document.createElement('div');
+        daysOfWeekContainer.classList.add('days-of-week');
+        var days = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'TODOS'];
+        days.forEach(function (day) {
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = day;
+            checkbox.name = "days-".concat(timeInputCount, "[]");
+            daysOfWeekContainer.appendChild(checkbox);
+            daysOfWeekContainer.append(day);
+        });
+        var errorMessage = document.createElement('span');
+        errorMessage.classList.add('error-message');
         timeInputContainer.appendChild(newTimeInput);
+        timeInputContainer.appendChild(daysOfWeekContainer);
+        timeInputContainer.appendChild(errorMessage);
         timeFieldsContainer.appendChild(timeInputContainer);
+        timeInputCount++;
     });
+    var validateForm = function () {
+        var isValid = true;
+        document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
+        document.querySelectorAll('.error').forEach(function (el) { return el.classList.remove('error'); });
+        var inputs = form.querySelectorAll('input[required], select[required]');
+        inputs.forEach(function (input) {
+            var errorMessageElement = input.nextElementSibling;
+            if (!input.value.trim()) {
+                isValid = false;
+                input.classList.add('error');
+                if (errorMessageElement)
+                    errorMessageElement.textContent = 'This field is required.';
+            }
+        });
+        var timeInputs = document.querySelectorAll('.time-input');
+        timeInputs.forEach(function (timeInput) {
+            var timeField = timeInput.querySelector('input[type="time"]');
+            var checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked');
+            var errorMessageElement = timeInput.querySelector('.error-message');
+            var isTimeMissing = !timeField.value;
+            var areDaysMissing = checkboxes.length === 0;
+            timeField.classList.toggle('error', isTimeMissing);
+            if (isTimeMissing || areDaysMissing) {
+                isValid = false;
+                var message = '';
+                if (isTimeMissing && areDaysMissing) {
+                    message = 'Time is required and at least one day must be selected.';
+                }
+                else if (isTimeMissing) {
+                    message = 'Time is required.';
+                }
+                else {
+                    message = 'At least one day must be selected.';
+                }
+                errorMessageElement.textContent = message;
+            }
+        });
+        return isValid;
+    };
     form.addEventListener('submit', function (event) {
         event.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
         var file = fileInput.files ? fileInput.files[0] : null;
         if (!file) {
+            // This case is handled by the validator, but we keep it as a safeguard.
             alert('Please upload an Excel file.');
             return;
         }
@@ -29,19 +89,33 @@ document.addEventListener('DOMContentLoaded', function () {
             var worksheet = workbook.Sheets[firstSheetName];
             var formData = new FormData(form);
             var newRow = {};
-            var times = [];
             formData.forEach(function (value, key) {
-                if (key === 'times[]') {
-                    if (value) {
-                        times.push(value.toString());
-                    }
-                }
-                else if (key !== 'excel-file') { // Exclude the file input from the data
+                if (key !== 'excel-file' && !key.startsWith('times') && !key.startsWith('days')) {
                     newRow[key] = value.toString();
                 }
             });
-            newRow['times'] = times.join(', ');
-            // Order the data to match a consistent column order
+            var timeInputs = document.querySelectorAll('.time-input');
+            var formattedTimes = [];
+            timeInputs.forEach(function (timeInput) {
+                var timeField = timeInput.querySelector('input[type="time"]');
+                var checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked');
+                if (timeField.value && checkboxes.length > 0) {
+                    var selectedDays_1 = [];
+                    var hasTodos_1 = false;
+                    checkboxes.forEach(function (checkbox) {
+                        if (checkbox.value === 'TODOS')
+                            hasTodos_1 = true;
+                        selectedDays_1.push(checkbox.value);
+                    });
+                    if (hasTodos_1) {
+                        formattedTimes.push("TODOS-".concat(timeField.value));
+                    }
+                    else {
+                        formattedTimes.push("".concat(selectedDays_1.join('-'), "-").concat(timeField.value));
+                    }
+                }
+            });
+            newRow['times'] = formattedTimes.join(', ');
             var rowData = [
                 newRow['field1'],
                 newRow['field2'],
@@ -53,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 newRow['times']
             ];
             XLSX.utils.sheet_add_aoa(worksheet, [rowData], { origin: -1 });
-            // Generate and trigger download of the modified file
             XLSX.writeFile(workbook, file.name);
             alert('The Excel file has been updated and downloaded!');
             form.reset();

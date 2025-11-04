@@ -74,3 +74,18 @@ button[type="button"]:hover {
 .time-input input {
     margin-right: 10px;
 }
+
+.days-of-week {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.8em;
+}
+
+.error {
+    border: 1px solid red;
+}

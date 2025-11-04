@@ -12,21 +12,27 @@
     <form id="excel-form">
         <label for="excel-file">Upload Excel File (.xlsx):</label>
         <input type="file" id="excel-file" name="excel-file" accept=".xlsx" required>
+        <span class="error-message"></span>
 
         <label for="field1">Field 1:</label>
         <input type="text" id="field1" name="field1" required>
+        <span class="error-message"></span>
 
         <label for="field2">Field 2:</label>
         <input type="text" id="field2" name="field2" required>
+        <span class="error-message"></span>
 
         <label for="field3">Field 3:</label>
         <input type="text" id="field3" name="field3" required>
+        <span class="error-message"></span>
 
         <label for="field4">Field 4:</label>
         <input type="text" id="field4" name="field4" required>
+        <span class="error-message"></span>
 
         <label for="field5">Field 5:</label>
         <input type="text" id="field5" name="field5" required>
+        <span class="error-message"></span>
 
         <label for="select-field">Select Field:</label>
         <select id="select-field" name="select-field" required>
@@ -35,14 +41,26 @@
             <option value="option2">Option 2</option>
             <option value="option3">Option 3</option>
         </select>
+        <span class="error-message"></span>
 
         <label for="number-field">Number Field:</label>
         <input type="number" id="number-field" name="number-field" required>
+        <span class="error-message"></span>
 
         <div id="time-fields">
             <label>Time Fields:</label>
             <div class="time-input">
                 <input type="time" name="times[]">
+                <div class="days-of-week">
+                    <input type="checkbox" value="SEG" name="days-0[]">SEG
+                    <input type="checkbox" value="TER" name="days-0[]">TER
+                    <input type="checkbox" value="QUA" name="days-0[]">QUA
+                    <input type="checkbox" value="QUI" name="days-0[]">QUI
+                    <input type="checkbox" value="SEX" name="days-0[]">SEX
+                    <input type="checkbox" value="SAB" name="days-0[]">SAB
+                    <input type="checkbox" value="TODOS" name="days-0[]">TODOS
+                </div>
+                <span class="error-message"></span>
             </div>
         </div>
         <button type="button" id="add-time">Add Time</button>
