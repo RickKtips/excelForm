@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const addTimeButton = document.getElementById('add-time') as HTMLButtonElement;
     const timeFieldsContainer = document.getElementById('time-fields') as HTMLDivElement;
     const fileInput = document.getElementById('excel-file') as HTMLInputElement;
+    const newButton = document.getElementById('new-button') as HTMLButtonElement;
+    const tableBody = document.querySelector('#data-table tbody') as HTMLTableSectionElement;
     let timeInputCount = 1;
+    let tableData: { [key: string]: any }[] = [];
 
     addTimeButton.addEventListener('click', () => {
         const timeInputContainer = document.createElement('div');
@@ -38,13 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
         timeInputCount++;
     });
 
-    const validateForm = (): boolean => {
+    const validateForm = (isNewButton: boolean = false): boolean => {
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
 
         const inputs = form.querySelectorAll('input[required], select[required]') as NodeListOf<HTMLInputElement | HTMLSelectElement>;
         inputs.forEach(input => {
+            if (input.id === 'excel-file' && isNewButton) return;
             const errorMessageElement = input.nextElementSibling as HTMLElement;
             if (!input.value.trim()) {
                 isValid = false;
@@ -59,20 +63,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked') as NodeListOf<HTMLInputElement>;
             const errorMessageElement = timeInput.querySelector('.error-message') as HTMLElement;
 
-            const isTimeMissing = !timeField.value;
-            const areDaysMissing = checkboxes.length === 0;
+            const timeEntered = timeField.value !== '';
+            const daysSelected = checkboxes.length > 0;
 
-            timeField.classList.toggle('error', isTimeMissing);
+            timeField.classList.toggle('error', timeEntered && !daysSelected);
 
-            if (isTimeMissing || areDaysMissing) {
+            if (timeEntered !== daysSelected) {
                 isValid = false;
                 let message = '';
-                if (isTimeMissing && areDaysMissing) {
-                    message = 'Time is required and at least one day must be selected.';
-                } else if (isTimeMissing) {
-                    message = 'Time is required.';
-                } else {
+                if (timeEntered && !daysSelected) {
                     message = 'At least one day must be selected.';
+                } else if (!timeEntered && daysSelected) {
+                    message = 'Time is required.';
                 }
                 errorMessageElement.textContent = message;
             }
@@ -81,6 +83,74 @@ document.addEventListener('DOMContentLoaded', () => {
         return isValid;
     };
 
+    const renderTable = () => {
+        tableBody.innerHTML = '';
+        tableData.forEach(rowData => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${rowData['nome']}</td>
+                <td>${rowData['url']}</td>
+                <td>${rowData['mensagem']}</td>
+                <td>${rowData['zoom']}</td>
+                <td>${rowData['url_teams']}</td>
+                <td>${rowData['resolucao_tela']}</td>
+                <td>${rowData['frequencia_tipo']}</td>
+                <td>${rowData['times']}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    };
+
+    newButton.addEventListener('click', () => {
+        if (!validateForm(true)) {
+            return;
+        }
+
+        const formData = new FormData(form);
+        const newRow: { [key: string]: any } = {};
+
+        formData.forEach((value, key) => {
+            if (key !== 'excel-file' && !key.startsWith('times') && !key.startsWith('days')) {
+                newRow[key] = value.toString();
+            }
+        });
+
+        const timeInputs = document.querySelectorAll('.time-input') as NodeListOf<HTMLDivElement>;
+        const formattedTimes: string[] = [];
+
+        timeInputs.forEach((timeInput) => {
+            const timeField = timeInput.querySelector('input[type="time"]') as HTMLInputElement;
+            const checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked') as NodeListOf<HTMLInputElement>;
+
+            if (timeField.value && checkboxes.length > 0) {
+                const selectedDays: string[] = [];
+                let hasTodos = false;
+                checkboxes.forEach(checkbox => {
+                    if (checkbox.value === 'TODOS') hasTodos = true;
+                    selectedDays.push(checkbox.value);
+                });
+
+                if (hasTodos) {
+                    formattedTimes.push(`TODOS-${timeField.value}`);
+                } else {
+                    formattedTimes.push(`${selectedDays.join('-')}-${timeField.value}`);
+                }
+            }
+        });
+
+        newRow['times'] = formattedTimes.join(', ');
+        tableData.push(newRow);
+        renderTable();
+        form.reset();
+        // Keep the file input
+        const file = fileInput.files ? fileInput.files[0] : null;
+        if (file) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+        }
+    });
+
     form.addEventListener('submit', (event) => {
         event.preventDefault();
 
@@ -88,9 +158,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (tableData.length === 0) {
+            alert('Please add at least one row of data.');
+            return;
+        }
+
         const file = fileInput.files ? fileInput.files[0] : null;
         if (!file) {
-            // This case is handled by the validator, but we keep it as a safeguard.
             alert('Please upload an Excel file.');
             return;
         }
@@ -102,56 +176,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
 
-            const formData = new FormData(form);
-            const newRow: { [key: string]: any } = {};
+            const dataToAdd = tableData.map(row => [
+                row['nome'],
+                row['url'],
+                row['mensagem'],
+                row['zoom'],
+                row['url_teams'],
+                row['resolucao_tela'],
+                row['frequencia_tipo'],
+                row['times']
+            ]);
 
-            formData.forEach((value, key) => {
-                if (key !== 'excel-file' && !key.startsWith('times') && !key.startsWith('days')) {
-                    newRow[key] = value.toString();
-                }
-            });
-
-            const timeInputs = document.querySelectorAll('.time-input') as NodeListOf<HTMLDivElement>;
-            const formattedTimes: string[] = [];
-
-            timeInputs.forEach((timeInput) => {
-                const timeField = timeInput.querySelector('input[type="time"]') as HTMLInputElement;
-                const checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked') as NodeListOf<HTMLInputElement>;
-
-                if (timeField.value && checkboxes.length > 0) {
-                    const selectedDays: string[] = [];
-                    let hasTodos = false;
-                    checkboxes.forEach(checkbox => {
-                        if (checkbox.value === 'TODOS') hasTodos = true;
-                        selectedDays.push(checkbox.value);
-                    });
-
-                    if (hasTodos) {
-                        formattedTimes.push(`TODOS-${timeField.value}`);
-                    } else {
-                        formattedTimes.push(`${selectedDays.join('-')}-${timeField.value}`);
-                    }
-                }
-            });
-
-            newRow['times'] = formattedTimes.join(', ');
-
-            const rowData = [
-                newRow['field1'],
-                newRow['field2'],
-                newRow['field3'],
-                newRow['field4'],
-                newRow['field5'],
-                newRow['select-field'],
-                newRow['number-field'],
-                newRow['times']
-            ];
-
-            XLSX.utils.sheet_add_aoa(worksheet, [rowData], { origin: -1 });
+            XLSX.utils.sheet_add_aoa(worksheet, dataToAdd, { origin: -1 });
             XLSX.writeFile(workbook, file.name);
 
             alert('The Excel file has been updated and downloaded!');
             form.reset();
+            tableData = [];
+            renderTable();
         };
         reader.readAsArrayBuffer(file);
     });
