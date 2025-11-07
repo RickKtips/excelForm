@@ -8,6 +8,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var tableBody = document.querySelector('#data-table tbody');
     var timeInputCount = 1;
     var tableData = [];
+    document.querySelectorAll('.remove-time').forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            var _a;
+            var target = event.target;
+            (_a = target.closest('.time-input')) === null || _a === void 0 ? void 0 : _a.remove();
+        });
+    });
     addTimeButton.addEventListener('click', function () {
         var timeInputContainer = document.createElement('div');
         timeInputContainer.classList.add('time-input');
@@ -27,20 +34,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         var errorMessage = document.createElement('span');
         errorMessage.classList.add('error-message');
+        var removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.textContent = 'Remove';
+        removeButton.addEventListener('click', function () {
+            timeInputContainer.remove();
+        });
         timeInputContainer.appendChild(newTimeInput);
         timeInputContainer.appendChild(daysOfWeekContainer);
         timeInputContainer.appendChild(errorMessage);
+        timeInputContainer.appendChild(removeButton);
         timeFieldsContainer.appendChild(timeInputContainer);
         timeInputCount++;
     });
-    var validateForm = function (isNewButton) {
-        if (isNewButton === void 0) { isNewButton = false; }
+    var validateNewButton = function () {
         var isValid = true;
         document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
         document.querySelectorAll('.error').forEach(function (el) { return el.classList.remove('error'); });
         var inputs = form.querySelectorAll('input[required], select[required]');
         inputs.forEach(function (input) {
-            if (input.id === 'excel-file' && isNewButton)
+            if (input.id === 'excel-file')
                 return;
             var errorMessageElement = input.nextElementSibling;
             if (!input.value.trim()) {
@@ -81,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
     newButton.addEventListener('click', function () {
-        if (!validateForm(true)) {
+        if (!validateNewButton()) {
             return;
         }
         var formData = new FormData(form);
@@ -115,27 +128,48 @@ document.addEventListener('DOMContentLoaded', function () {
         newRow['times'] = formattedTimes.join(', ');
         tableData.push(newRow);
         renderTable();
-        form.reset();
-        // Keep the file input
-        var file = fileInput.files ? fileInput.files[0] : null;
-        if (file) {
-            var dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-        }
+        // Manually reset form fields except for the file input
+        var inputs = form.querySelectorAll('input, select');
+        inputs.forEach(function (input) {
+            if (input.id !== 'excel-file') {
+                var inputElement = input;
+                if (inputElement.type === 'checkbox' || inputElement.type === 'radio') {
+                    inputElement.checked = false;
+                }
+                else {
+                    inputElement.value = '';
+                }
+            }
+        });
+        // Clear additional time inputs
+        var additionalTimeInputs = document.querySelectorAll('.time-input:not(:first-child)');
+        additionalTimeInputs.forEach(function (input) { return input.remove(); });
     });
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
-        if (!validateForm()) {
-            return;
+    var validateSubmitButton = function () {
+        var isValid = true;
+        document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
+        document.querySelectorAll('.error').forEach(function (el) { return el.classList.remove('error'); });
+        if (!fileInput.files || fileInput.files.length === 0) {
+            isValid = false;
+            fileInput.classList.add('error');
+            var errorMessageElement = fileInput.nextElementSibling;
+            if (errorMessageElement)
+                errorMessageElement.textContent = 'This field is required.';
         }
         if (tableData.length === 0) {
+            isValid = false;
             alert('Please add at least one row of data.');
+        }
+        return isValid;
+    };
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!validateSubmitButton()) {
             return;
         }
         var file = fileInput.files ? fileInput.files[0] : null;
         if (!file) {
-            alert('Please upload an Excel file.');
+            // This is already handled in validateSubmitButton, but we need the file object.
             return;
         }
         var reader = new FileReader();

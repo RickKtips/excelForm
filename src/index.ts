@@ -11,6 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let timeInputCount = 1;
     let tableData: { [key: string]: any }[] = [];
 
+    document.querySelectorAll('.remove-time').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement;
+            target.closest('.time-input')?.remove();
+        });
+    });
+
     addTimeButton.addEventListener('click', () => {
         const timeInputContainer = document.createElement('div');
         timeInputContainer.classList.add('time-input');
@@ -34,21 +41,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const errorMessage = document.createElement('span');
         errorMessage.classList.add('error-message');
 
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.textContent = 'Remove';
+        removeButton.addEventListener('click', () => {
+            timeInputContainer.remove();
+        });
+
         timeInputContainer.appendChild(newTimeInput);
         timeInputContainer.appendChild(daysOfWeekContainer);
         timeInputContainer.appendChild(errorMessage);
+        timeInputContainer.appendChild(removeButton);
         timeFieldsContainer.appendChild(timeInputContainer);
         timeInputCount++;
     });
 
-    const validateForm = (isNewButton: boolean = false): boolean => {
+    const validateNewButton = (): boolean => {
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
 
         const inputs = form.querySelectorAll('input[required], select[required]') as NodeListOf<HTMLInputElement | HTMLSelectElement>;
         inputs.forEach(input => {
-            if (input.id === 'excel-file' && isNewButton) return;
+            if (input.id === 'excel-file') return;
             const errorMessageElement = input.nextElementSibling as HTMLElement;
             if (!input.value.trim()) {
                 isValid = false;
@@ -102,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     newButton.addEventListener('click', () => {
-        if (!validateForm(true)) {
+        if (!validateNewButton()) {
             return;
         }
 
@@ -141,31 +156,55 @@ document.addEventListener('DOMContentLoaded', () => {
         newRow['times'] = formattedTimes.join(', ');
         tableData.push(newRow);
         renderTable();
-        form.reset();
-        // Keep the file input
-        const file = fileInput.files ? fileInput.files[0] : null;
-        if (file) {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-        }
+
+        // Manually reset form fields except for the file input
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.id !== 'excel-file') {
+                const inputElement = input as HTMLInputElement;
+                if (inputElement.type === 'checkbox' || inputElement.type === 'radio') {
+                    inputElement.checked = false;
+                } else {
+                    inputElement.value = '';
+                }
+            }
+        });
+
+        // Clear additional time inputs
+        const additionalTimeInputs = document.querySelectorAll('.time-input:not(:first-child)');
+        additionalTimeInputs.forEach(input => input.remove());
     });
+
+    const validateSubmitButton = (): boolean => {
+        let isValid = true;
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            isValid = false;
+            fileInput.classList.add('error');
+            const errorMessageElement = fileInput.nextElementSibling as HTMLElement;
+            if (errorMessageElement) errorMessageElement.textContent = 'This field is required.';
+        }
+
+        if (tableData.length === 0) {
+            isValid = false;
+            alert('Please add at least one row of data.');
+        }
+
+        return isValid;
+    };
 
     form.addEventListener('submit', (event) => {
         event.preventDefault();
 
-        if (!validateForm()) {
-            return;
-        }
-
-        if (tableData.length === 0) {
-            alert('Please add at least one row of data.');
+        if (!validateSubmitButton()) {
             return;
         }
 
         const file = fileInput.files ? fileInput.files[0] : null;
         if (!file) {
-            alert('Please upload an Excel file.');
+            // This is already handled in validateSubmitButton, but we need the file object.
             return;
         }
 
