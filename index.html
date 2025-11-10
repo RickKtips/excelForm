@@ -9,9 +9,9 @@
 </head>
 <body>
     <h1>Add New Line to Excel</h1>
-    <form id="excel-form">
+    <form id="excel-form" novalidate>
         <label for="excel-file">Upload Excel File (.xlsx):</label>
-        <input type="file" id="excel-file" name="excel-file" accept=".xlsx" required>
+        <input type="file" id="excel-file" name="excel-file" accept=".xlsx">
         <span class="error-message" id="file-error"></span>
 
         <label for="nome">Nome:</label>
@@ -60,7 +60,6 @@
                     <input type="checkbox" value="SAB" name="days-0[]">SAB
                     <input type="checkbox" value="TODOS" name="days-0[]">TODOS
                 </div>
-                <button type="button" class="delete-time">Delete</button>
                 <span class="error-message"></span>
             </div>
         </div>

@@ -51,10 +51,12 @@ document.addEventListener('DOMContentLoaded', function () {
         var isValid = true;
         document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
         document.querySelectorAll('.error').forEach(function (el) { return el.classList.remove('error'); });
-        var inputs = form.querySelectorAll('input[required], select[required]');
-        inputs.forEach(function (input) {
-            if (input.id === 'excel-file')
-                return;
+        var requiredFields = [
+            'nome', 'url', 'mensagem', 'zoom', 'url_teams',
+            'resolucao_tela', 'frequencia_tipo'
+        ];
+        requiredFields.forEach(function (fieldId) {
+            var input = document.getElementById(fieldId);
             var errorMessageElement = input.nextElementSibling;
             if (!input.value.trim()) {
                 isValid = false;

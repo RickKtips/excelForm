@@ -63,9 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
 
-        const inputs = form.querySelectorAll('input[required], select[required]') as NodeListOf<HTMLInputElement | HTMLSelectElement>;
-        inputs.forEach(input => {
-            if (input.id === 'excel-file') return;
+        const requiredFields = [
+            'nome', 'url', 'mensagem', 'zoom', 'url_teams',
+            'resolucao_tela', 'frequencia_tipo'
+        ];
+
+        requiredFields.forEach(fieldId => {
+            const input = document.getElementById(fieldId) as HTMLInputElement | HTMLSelectElement;
             const errorMessageElement = input.nextElementSibling as HTMLElement;
             if (!input.value.trim()) {
                 isValid = false;
