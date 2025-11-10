@@ -30,18 +30,33 @@ document.addEventListener('DOMContentLoaded', function () {
         timeInputContainer.appendChild(newTimeInput);
         timeInputContainer.appendChild(daysOfWeekContainer);
         timeInputContainer.appendChild(errorMessage);
+        var deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.classList.add('delete-time');
+        deleteButton.textContent = 'Delete';
+        timeInputContainer.appendChild(deleteButton);
         timeFieldsContainer.appendChild(timeInputContainer);
         timeInputCount++;
     });
-    var validateForm = function (isNewButton) {
-        if (isNewButton === void 0) { isNewButton = false; }
+    timeFieldsContainer.addEventListener('click', function (event) {
+        var target = event.target;
+        if (target.classList.contains('delete-time')) {
+            var timeInput = target.closest('.time-input');
+            if (timeInput) {
+                timeInput.remove();
+            }
+        }
+    });
+    var validateForm = function () {
         var isValid = true;
         document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
         document.querySelectorAll('.error').forEach(function (el) { return el.classList.remove('error'); });
-        var inputs = form.querySelectorAll('input[required], select[required]');
-        inputs.forEach(function (input) {
-            if (input.id === 'excel-file' && isNewButton)
-                return;
+        var requiredFields = [
+            'nome', 'url', 'mensagem', 'zoom', 'url_teams',
+            'resolucao_tela', 'frequencia_tipo'
+        ];
+        requiredFields.forEach(function (fieldId) {
+            var input = document.getElementById(fieldId);
             var errorMessageElement = input.nextElementSibling;
             if (!input.value.trim()) {
                 isValid = false;
@@ -81,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
     newButton.addEventListener('click', function () {
-        if (!validateForm(true)) {
+        if (!validateForm()) {
             return;
         }
         var formData = new FormData(form);
@@ -115,28 +130,29 @@ document.addEventListener('DOMContentLoaded', function () {
         newRow['times'] = formattedTimes.join(', ');
         tableData.push(newRow);
         renderTable();
-        form.reset();
-        // Keep the file input
-        var file = fileInput.files ? fileInput.files[0] : null;
-        if (file) {
-            var dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-        }
+        var inputs = form.querySelectorAll('input, select');
+        inputs.forEach(function (input) {
+            if (input.id !== 'excel-file') {
+                input.value = '';
+            }
+        });
     });
     form.addEventListener('submit', function (event) {
         event.preventDefault();
-        if (!validateForm()) {
-            return;
-        }
+        var file = fileInput.files ? fileInput.files[0] : null;
+        var fileError = document.getElementById('file-error');
         if (tableData.length === 0) {
             alert('Please add at least one row of data.');
             return;
         }
-        var file = fileInput.files ? fileInput.files[0] : null;
         if (!file) {
-            alert('Please upload an Excel file.');
+            fileError.textContent = 'Please upload an Excel file.';
+            fileInput.classList.add('error');
             return;
+        }
+        else {
+            fileError.textContent = '';
+            fileInput.classList.remove('error');
         }
         var reader = new FileReader();
         reader.onload = function (e) {

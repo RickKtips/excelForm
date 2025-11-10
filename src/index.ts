@@ -37,18 +37,39 @@ document.addEventListener('DOMContentLoaded', () => {
         timeInputContainer.appendChild(newTimeInput);
         timeInputContainer.appendChild(daysOfWeekContainer);
         timeInputContainer.appendChild(errorMessage);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.classList.add('delete-time');
+        deleteButton.textContent = 'Delete';
+        timeInputContainer.appendChild(deleteButton);
+
         timeFieldsContainer.appendChild(timeInputContainer);
         timeInputCount++;
     });
 
-    const validateForm = (isNewButton: boolean = false): boolean => {
+    timeFieldsContainer.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        if (target.classList.contains('delete-time')) {
+            const timeInput = target.closest('.time-input');
+            if (timeInput) {
+                timeInput.remove();
+            }
+        }
+    });
+
+    const validateForm = (): boolean => {
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
 
-        const inputs = form.querySelectorAll('input[required], select[required]') as NodeListOf<HTMLInputElement | HTMLSelectElement>;
-        inputs.forEach(input => {
-            if (input.id === 'excel-file' && isNewButton) return;
+        const requiredFields = [
+            'nome', 'url', 'mensagem', 'zoom', 'url_teams',
+            'resolucao_tela', 'frequencia_tipo'
+        ];
+
+        requiredFields.forEach(fieldId => {
+            const input = document.getElementById(fieldId) as HTMLInputElement | HTMLSelectElement;
             const errorMessageElement = input.nextElementSibling as HTMLElement;
             if (!input.value.trim()) {
                 isValid = false;
@@ -102,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     newButton.addEventListener('click', () => {
-        if (!validateForm(true)) {
+        if (!validateForm()) {
             return;
         }
 
@@ -141,32 +162,33 @@ document.addEventListener('DOMContentLoaded', () => {
         newRow['times'] = formattedTimes.join(', ');
         tableData.push(newRow);
         renderTable();
-        form.reset();
-        // Keep the file input
-        const file = fileInput.files ? fileInput.files[0] : null;
-        if (file) {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-        }
+
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.id !== 'excel-file') {
+                (input as HTMLInputElement).value = '';
+            }
+        });
     });
 
     form.addEventListener('submit', (event) => {
         event.preventDefault();
 
-        if (!validateForm()) {
-            return;
-        }
+        const file = fileInput.files ? fileInput.files[0] : null;
+        const fileError = document.getElementById('file-error') as HTMLElement;
 
         if (tableData.length === 0) {
             alert('Please add at least one row of data.');
             return;
         }
 
-        const file = fileInput.files ? fileInput.files[0] : null;
         if (!file) {
-            alert('Please upload an Excel file.');
+            fileError.textContent = 'Please upload an Excel file.';
+            fileInput.classList.add('error');
             return;
+        } else {
+            fileError.textContent = '';
+            fileInput.classList.remove('error');
         }
 
         const reader = new FileReader();

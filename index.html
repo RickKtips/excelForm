@@ -9,10 +9,10 @@
 </head>
 <body>
     <h1>Add New Line to Excel</h1>
-    <form id="excel-form">
+    <form id="excel-form" novalidate>
         <label for="excel-file">Upload Excel File (.xlsx):</label>
-        <input type="file" id="excel-file" name="excel-file" accept=".xlsx" required>
-        <span class="error-message"></span>
+        <input type="file" id="excel-file" name="excel-file" accept=".xlsx">
+        <span class="error-message" id="file-error"></span>
 
         <label for="nome">Nome:</label>
         <input type="text" id="nome" name="nome" required>
