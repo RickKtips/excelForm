@@ -7,8 +7,10 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 h1 {
@@ -23,6 +25,7 @@ form {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 500px;
+    margin-bottom: 20px;
 }
 
 label {
@@ -61,8 +64,12 @@ button[type="button"] {
     background: #f0ad4e;
 }
 
-button[type="button"]:hover {
-    background: #ec971f;
+button#new-button {
+    background: #337ab7;
+}
+
+button#new-button:hover {
+    background: #286090;
 }
 
 .time-input {
@@ -73,4 +80,43 @@ button[type="button"]:hover {
 
 .time-input input {
     margin-right: 10px;
+}
+
+.days-of-week {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error-message {
+    color: red;
+    font-size: 0.8em;
+}
+
+.error {
+    border: 1px solid red;
+}
+
+#data-table {
+    width: 100%;
+    max-width: 1000px;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#data-table th,
+#data-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#data-table th {
+    background-color: #f2f2f2;
+}
+
+#data-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
 }

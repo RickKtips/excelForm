@@ -9,46 +9,83 @@
 </head>
 <body>
     <h1>Add New Line to Excel</h1>
-    <form id="excel-form">
+    <form id="excel-form" novalidate>
         <label for="excel-file">Upload Excel File (.xlsx):</label>
-        <input type="file" id="excel-file" name="excel-file" accept=".xlsx" required>
+        <input type="file" id="excel-file" name="excel-file" accept=".xlsx">
+        <span class="error-message" id="file-error"></span>
 
-        <label for="field1">Field 1:</label>
-        <input type="text" id="field1" name="field1" required>
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required>
+        <span class="error-message"></span>
 
-        <label for="field2">Field 2:</label>
-        <input type="text" id="field2" name="field2" required>
+        <label for="url">URL:</label>
+        <input type="text" id="url" name="url" required>
+        <span class="error-message"></span>
 
-        <label for="field3">Field 3:</label>
-        <input type="text" id="field3" name="field3" required>
+        <label for="mensagem">Mensagem:</label>
+        <input type="text" id="mensagem" name="mensagem" required>
+        <span class="error-message"></span>
 
-        <label for="field4">Field 4:</label>
-        <input type="text" id="field4" name="field4" required>
+        <label for="zoom">Zoom:</label>
+        <input type="number" id="zoom" name="zoom" required>
+        <span class="error-message"></span>
 
-        <label for="field5">Field 5:</label>
-        <input type="text" id="field5" name="field5" required>
+        <label for="url_teams">URL Teams:</label>
+        <input type="text" id="url_teams" name="url_teams" required>
+        <span class="error-message"></span>
 
-        <label for="select-field">Select Field:</label>
-        <select id="select-field" name="select-field" required>
+        <label for="resolucao_tela">Resolução da Tela:</label>
+        <input type="text" id="resolucao_tela" name="resolucao_tela" required>
+        <span class="error-message"></span>
+
+        <label for="frequencia_tipo">Frequência Tipo:</label>
+        <select id="frequencia_tipo" name="frequencia_tipo" required>
             <option value="">--Please choose an option--</option>
             <option value="option1">Option 1</option>
             <option value="option2">Option 2</option>
             <option value="option3">Option 3</option>
         </select>
-
-        <label for="number-field">Number Field:</label>
-        <input type="number" id="number-field" name="number-field" required>
+        <span class="error-message"></span>
 
         <div id="time-fields">
-            <label>Time Fields:</label>
+            <label>Times:</label>
             <div class="time-input">
                 <input type="time" name="times[]">
+                <div class="days-of-week">
+                    <input type="checkbox" value="SEG" name="days-0[]">SEG
+                    <input type="checkbox" value="TER" name="days-0[]">TER
+                    <input type="checkbox" value="QUA" name="days-0[]">QUA
+                    <input type="checkbox" value="QUI" name="days-0[]">QUI
+                    <input type="checkbox" value="SEX" name="days-0[]">SEX
+                    <input type="checkbox" value="SAB" name="days-0[]">SAB
+                    <input type="checkbox" value="TODOS" name="days-0[]">TODOS
+                </div>
+                <span class="error-message"></span>
             </div>
         </div>
         <button type="button" id="add-time">Add Time</button>
 
-        <button type="submit">Submit</button>
+        <button type="button" id="new-button">New</button>
+        <button type="submit">Download</button>
     </form>
+
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>URL</th>
+                <th>Mensagem</th>
+                <th>Zoom</th>
+                <th>URL Teams</th>
+                <th>Resolução da Tela</th>
+                <th>Frequência Tipo</th>
+                <th>Times</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
     <script src="dist/index.js"></script>
 </body>
 </html>
