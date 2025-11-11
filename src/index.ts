@@ -87,17 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeEntered = timeField.value !== '';
             const daysSelected = checkboxes.length > 0;
 
-            timeField.classList.toggle('error', timeEntered && !daysSelected);
-
-            if (timeEntered !== daysSelected) {
+            if (timeEntered && !daysSelected) {
                 isValid = false;
-                let message = '';
-                if (timeEntered && !daysSelected) {
-                    message = 'At least one day must be selected.';
-                } else if (!timeEntered && daysSelected) {
-                    message = 'Time is required.';
-                }
-                errorMessageElement.textContent = message;
+                timeField.classList.add('error');
+                errorMessageElement.textContent = 'At least one day must be selected.';
+            } else if (!timeEntered && daysSelected) {
+                isValid = false;
+                timeField.classList.add('error');
+                errorMessageElement.textContent = 'Time is required.';
             }
         });
 
