@@ -93,6 +93,17 @@ document.addEventListener('DOMContentLoaded', function () {
             tableBody.appendChild(row);
         });
     };
+    var resetForm = function () {
+        form.reset();
+        var timeInputs = timeFieldsContainer.querySelectorAll('.time-input');
+        timeInputs.forEach(function (timeInput, index) {
+            if (index > 0) {
+                timeInput.remove();
+            }
+        });
+        document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
+        document.querySelectorAll('.error').forEach(function (el) { return el.classList.remove('error'); });
+    };
     newButton.addEventListener('click', function () {
         if (!validateForm()) {
             return;
@@ -128,12 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
         newRow['times'] = formattedTimes.join(', ');
         tableData.push(newRow);
         renderTable();
-        var inputs = form.querySelectorAll('input, select');
-        inputs.forEach(function (input) {
-            if (input.id !== 'excel-file') {
-                input.value = '';
-            }
-        });
+        resetForm();
     });
     form.addEventListener('submit', function (event) {
         event.preventDefault();
