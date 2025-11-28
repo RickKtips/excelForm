@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('excel-form');
     var addTimeButton = document.getElementById('add-time');
     var timeFieldsContainer = document.getElementById('time-fields');
+    var frequenciaTipo = document.getElementById('frequencia_tipo');
     var fileInput = document.getElementById('excel-file');
     var newButton = document.getElementById('new-button');
     var tableBody = document.querySelector('#data-table tbody');
@@ -47,6 +48,57 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+    var updateTimeInput = function () {
+        var selectedValue = frequenciaTipo.value;
+        var timeInputContainer = document.querySelector('.time-input');
+        if (!timeInputContainer)
+            return;
+        var existingTimeInput = timeInputContainer.querySelector('input[type="time"], select');
+        if (existingTimeInput) {
+            existingTimeInput.remove();
+        }
+        if (selectedValue === 'constant') {
+            var select_1 = document.createElement('select');
+            select_1.name = 'times[]';
+            var options = ['15min', '1h', '2h', '4h', '8h'];
+            options.forEach(function (optionValue) {
+                var option = document.createElement('option');
+                option.value = optionValue;
+                option.textContent = optionValue;
+                select_1.appendChild(option);
+            });
+            timeInputContainer.insertBefore(select_1, timeInputContainer.firstChild);
+            addTimeButton.style.display = 'none';
+        }
+        else {
+            var timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.name = 'times[]';
+            timeInputContainer.insertBefore(timeInput, timeInputContainer.firstChild);
+            addTimeButton.style.display = 'block';
+        }
+    };
+    frequenciaTipo.addEventListener('change', updateTimeInput);
+    var generateConstantTimes = function (interval, days) {
+        var times = [];
+        var value = parseInt(interval);
+        var intervalInMinutes = 0;
+        if (interval.includes('h')) {
+            intervalInMinutes = value * 60;
+        }
+        else if (interval.includes('min')) {
+            intervalInMinutes = value;
+        }
+        if (intervalInMinutes === 0) {
+            return [];
+        }
+        for (var m = 0; m < 24 * 60; m += intervalInMinutes) {
+            var hour = Math.floor(m / 60).toString().padStart(2, '0');
+            var minute = (m % 60).toString().padStart(2, '0');
+            times.push("".concat(days.join('-'), "-").concat(hour, ":").concat(minute));
+        }
+        return times;
+    };
     var validateForm = function () {
         var isValid = true;
         document.querySelectorAll('.error-message').forEach(function (el) { return el.textContent = ''; });
@@ -67,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         var timeInputs = document.querySelectorAll('.time-input');
         timeInputs.forEach(function (timeInput) {
-            var timeField = timeInput.querySelector('input[type="time"]');
+            var timeField = timeInput.querySelector('input[type="time"], select');
             var checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked');
             var errorMessageElement = timeInput.querySelector('.error-message');
             var timeEntered = timeField.value !== '';
@@ -75,12 +127,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (timeEntered && !daysSelected) {
                 isValid = false;
                 timeField.classList.add('error');
-                errorMessageElement.textContent = 'At least one day must be selected.';
+                if (errorMessageElement)
+                    errorMessageElement.textContent = 'At least one day must be selected.';
             }
             else if (!timeEntered && daysSelected) {
                 isValid = false;
                 timeField.classList.add('error');
-                errorMessageElement.textContent = 'Time is required.';
+                if (errorMessageElement)
+                    errorMessageElement.textContent = 'Time is required.';
             }
         });
         return isValid;
@@ -118,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var timeInputs = document.querySelectorAll('.time-input');
         var formattedTimes = [];
         timeInputs.forEach(function (timeInput) {
-            var timeField = timeInput.querySelector('input[type="time"]');
+            var timeField = timeInput.querySelector('input[type="time"], select');
             var checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked');
             if (timeField.value && checkboxes.length > 0) {
                 var selectedDays_1 = [];
@@ -128,11 +182,21 @@ document.addEventListener('DOMContentLoaded', function () {
                         hasTodos_1 = true;
                     selectedDays_1.push(checkbox.value);
                 });
-                if (hasTodos_1) {
-                    formattedTimes.push("TODOS-".concat(timeField.value));
+                if (frequenciaTipo.value === 'constant') {
+                    if (hasTodos_1) {
+                        formattedTimes = generateConstantTimes(timeField.value, ['TODOS']);
+                    }
+                    else {
+                        formattedTimes = generateConstantTimes(timeField.value, selectedDays_1);
+                    }
                 }
                 else {
-                    formattedTimes.push("".concat(selectedDays_1.join('-'), "-").concat(timeField.value));
+                    if (hasTodos_1) {
+                        formattedTimes.push("TODOS-".concat(timeField.value));
+                    }
+                    else {
+                        formattedTimes.push("".concat(selectedDays_1.join('-'), "-").concat(timeField.value));
+                    }
                 }
             }
         });
