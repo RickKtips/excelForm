@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('excel-form') as HTMLFormElement;
     const addTimeButton = document.getElementById('add-time') as HTMLButtonElement;
     const timeFieldsContainer = document.getElementById('time-fields') as HTMLDivElement;
+    const frequenciaTipo = document.getElementById('frequencia_tipo') as HTMLSelectElement;
     const fileInput = document.getElementById('excel-file') as HTMLInputElement;
     const newButton = document.getElementById('new-button') as HTMLButtonElement;
     const tableBody = document.querySelector('#data-table tbody') as HTMLTableSectionElement;
@@ -58,6 +59,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const updateTimeInput = () => {
+        const selectedValue = frequenciaTipo.value;
+        const timeInputContainer = document.querySelector('.time-input') as HTMLDivElement;
+
+        if (!timeInputContainer) return;
+
+        const existingTimeInput = timeInputContainer.querySelector('input[type="time"], select');
+        if (existingTimeInput) {
+            existingTimeInput.remove();
+        }
+
+        if (selectedValue === 'constant') {
+            const select = document.createElement('select');
+            select.name = 'times[]';
+            const options = ['15min', '1h', '2h', '4h', '8h'];
+            options.forEach(optionValue => {
+                const option = document.createElement('option');
+                option.value = optionValue;
+                option.textContent = optionValue;
+                select.appendChild(option);
+            });
+            timeInputContainer.insertBefore(select, timeInputContainer.firstChild);
+            addTimeButton.style.display = 'none';
+        } else {
+            const timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.name = 'times[]';
+            timeInputContainer.insertBefore(timeInput, timeInputContainer.firstChild);
+            addTimeButton.style.display = 'block';
+        }
+    };
+
+    frequenciaTipo.addEventListener('change', updateTimeInput);
+
+    const generateConstantTimes = (interval: string, days: string[]): string[] => {
+        const times: string[] = [];
+        const value = parseInt(interval);
+
+        let intervalInMinutes = 0;
+        if (interval.includes('h')) {
+            intervalInMinutes = value * 60;
+        } else if (interval.includes('min')) {
+            intervalInMinutes = value;
+        }
+
+        if (intervalInMinutes === 0) {
+            return [];
+        }
+
+        for (let m = 0; m < 24 * 60; m += intervalInMinutes) {
+            const hour = Math.floor(m / 60).toString().padStart(2, '0');
+            const minute = (m % 60).toString().padStart(2, '0');
+            times.push(`${days.join('-')}-${hour}:${minute}`);
+        }
+        return times;
+    };
+
     const validateForm = (): boolean => {
         let isValid = true;
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
@@ -80,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const timeInputs = document.querySelectorAll('.time-input') as NodeListOf<HTMLDivElement>;
         timeInputs.forEach((timeInput) => {
-            const timeField = timeInput.querySelector('input[type="time"]') as HTMLInputElement;
+            const timeField = timeInput.querySelector('input[type="time"], select') as HTMLInputElement | HTMLSelectElement;
             const checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked') as NodeListOf<HTMLInputElement>;
             const errorMessageElement = timeInput.querySelector('.error-message') as HTMLElement;
 
@@ -90,11 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (timeEntered && !daysSelected) {
                 isValid = false;
                 timeField.classList.add('error');
-                errorMessageElement.textContent = 'At least one day must be selected.';
+                if (errorMessageElement) errorMessageElement.textContent = 'At least one day must be selected.';
             } else if (!timeEntered && daysSelected) {
                 isValid = false;
                 timeField.classList.add('error');
-                errorMessageElement.textContent = 'Time is required.';
+                if (errorMessageElement) errorMessageElement.textContent = 'Time is required.';
             }
         });
 
@@ -148,10 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const timeInputs = document.querySelectorAll('.time-input') as NodeListOf<HTMLDivElement>;
-        const formattedTimes: string[] = [];
+        let formattedTimes: string[] = [];
 
         timeInputs.forEach((timeInput) => {
-            const timeField = timeInput.querySelector('input[type="time"]') as HTMLInputElement;
+            const timeField = timeInput.querySelector('input[type="time"], select') as HTMLInputElement | HTMLSelectElement;
             const checkboxes = timeInput.querySelectorAll('input[type="checkbox"]:checked') as NodeListOf<HTMLInputElement>;
 
             if (timeField.value && checkboxes.length > 0) {
@@ -162,10 +220,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedDays.push(checkbox.value);
                 });
 
-                if (hasTodos) {
-                    formattedTimes.push(`TODOS-${timeField.value}`);
+                if (frequenciaTipo.value === 'constant') {
+                    if (hasTodos) {
+                        formattedTimes = generateConstantTimes(timeField.value, ['TODOS']);
+                    } else {
+                        formattedTimes = generateConstantTimes(timeField.value, selectedDays);
+                    }
                 } else {
-                    formattedTimes.push(`${selectedDays.join('-')}-${timeField.value}`);
+                    if (hasTodos) {
+                        formattedTimes.push(`TODOS-${timeField.value}`);
+                    } else {
+                        formattedTimes.push(`${selectedDays.join('-')}-${timeField.value}`);
+                    }
                 }
             }
         });
