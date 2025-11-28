@@ -12,13 +12,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let timeInputCount = 1;
     let tableData: { [key: string]: any }[] = [];
 
-    addTimeButton.addEventListener('click', () => {
+    const createTimeInputRow = (index: number, type: string) => {
         const timeInputContainer = document.createElement('div');
         timeInputContainer.classList.add('time-input');
 
-        const newTimeInput = document.createElement('input');
-        newTimeInput.type = 'time';
-        newTimeInput.name = 'times[]';
+        let timeInput: HTMLInputElement | HTMLSelectElement;
+
+        if (type === 'constant') {
+            timeInput = document.createElement('select');
+            timeInput.name = `times[]`;
+            const options = ['15min', '1h', '2h', '4h', '8h'];
+            options.forEach(optionValue => {
+                const option = document.createElement('option');
+                option.value = optionValue;
+                option.textContent = optionValue;
+                timeInput.appendChild(option);
+            });
+        } else {
+            timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.name = `times[]`;
+        }
 
         const daysOfWeekContainer = document.createElement('div');
         daysOfWeekContainer.classList.add('days-of-week');
@@ -27,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = day;
-            checkbox.name = `days-${timeInputCount}[]`;
+            checkbox.name = `days-${index}[]`;
             daysOfWeekContainer.appendChild(checkbox);
             daysOfWeekContainer.append(day);
         });
@@ -35,17 +49,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const errorMessage = document.createElement('span');
         errorMessage.classList.add('error-message');
 
-        timeInputContainer.appendChild(newTimeInput);
+        timeInputContainer.appendChild(timeInput);
         timeInputContainer.appendChild(daysOfWeekContainer);
         timeInputContainer.appendChild(errorMessage);
 
-        const deleteButton = document.createElement('button');
-        deleteButton.type = 'button';
-        deleteButton.classList.add('delete-time');
-        deleteButton.textContent = 'Delete';
-        timeInputContainer.appendChild(deleteButton);
+        if (index > 0) {
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.classList.add('delete-time');
+            deleteButton.textContent = 'Delete';
+            timeInputContainer.appendChild(deleteButton);
+        }
 
-        timeFieldsContainer.appendChild(timeInputContainer);
+        return timeInputContainer;
+    };
+
+    addTimeButton.addEventListener('click', () => {
+        const selectedType = frequenciaTipo.value;
+        const newTimeInput = createTimeInputRow(timeInputCount, selectedType);
+        timeFieldsContainer.appendChild(newTimeInput);
         timeInputCount++;
     });
 
@@ -61,37 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateTimeInput = () => {
         const selectedValue = frequenciaTipo.value;
-        const timeInputContainer = document.querySelector('.time-input') as HTMLDivElement;
-
-        if (!timeInputContainer) return;
-
-        const existingTimeInput = timeInputContainer.querySelector('input[type="time"], select');
-        if (existingTimeInput) {
-            existingTimeInput.remove();
-        }
-
-        if (selectedValue === 'constant') {
-            const select = document.createElement('select');
-            select.name = 'times[]';
-            const options = ['15min', '1h', '2h', '4h', '8h'];
-            options.forEach(optionValue => {
-                const option = document.createElement('option');
-                option.value = optionValue;
-                option.textContent = optionValue;
-                select.appendChild(option);
-            });
-            timeInputContainer.insertBefore(select, timeInputContainer.firstChild);
-            addTimeButton.style.display = 'none';
-        } else {
-            const timeInput = document.createElement('input');
-            timeInput.type = 'time';
-            timeInput.name = 'times[]';
-            timeInputContainer.insertBefore(timeInput, timeInputContainer.firstChild);
-            addTimeButton.style.display = 'block';
-        }
+        timeFieldsContainer.innerHTML = ''; // Clear existing fields
+        const initialTimeInput = createTimeInputRow(0, selectedValue);
+        timeFieldsContainer.appendChild(initialTimeInput);
+        timeInputCount = 1; // Reset count
+        addTimeButton.style.display = 'block';
     };
 
     frequenciaTipo.addEventListener('change', updateTimeInput);
+
+    // Initialize with one time input row
+    updateTimeInput();
+
 
     const generateConstantTimes = (interval: string, days: string[]): string[] => {
         const times: string[] = [];
@@ -178,7 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const resetForm = () => {
+        const selectedFile = fileInput.files ? fileInput.files[0] : null;
         form.reset();
+        if (selectedFile) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(selectedFile);
+            fileInput.files = dataTransfer.files;
+        }
+
 
         const timeInputs = timeFieldsContainer.querySelectorAll('.time-input');
         timeInputs.forEach((timeInput, index) => {
@@ -222,9 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (frequenciaTipo.value === 'constant') {
                     if (hasTodos) {
-                        formattedTimes = generateConstantTimes(timeField.value, ['TODOS']);
+                        formattedTimes = formattedTimes.concat(generateConstantTimes(timeField.value, ['TODOS']));
                     } else {
-                        formattedTimes = generateConstantTimes(timeField.value, selectedDays);
+                        formattedTimes = formattedTimes.concat(generateConstantTimes(timeField.value, selectedDays));
                     }
                 } else {
                     if (hasTodos) {

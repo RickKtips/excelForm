@@ -9,12 +9,26 @@ document.addEventListener('DOMContentLoaded', function () {
     var tableBody = document.querySelector('#data-table tbody');
     var timeInputCount = 1;
     var tableData = [];
-    addTimeButton.addEventListener('click', function () {
+    var createTimeInputRow = function (index, type) {
         var timeInputContainer = document.createElement('div');
         timeInputContainer.classList.add('time-input');
-        var newTimeInput = document.createElement('input');
-        newTimeInput.type = 'time';
-        newTimeInput.name = 'times[]';
+        var timeInput;
+        if (type === 'constant') {
+            timeInput = document.createElement('select');
+            timeInput.name = "times[]";
+            var options = ['15min', '1h', '2h', '4h', '8h'];
+            options.forEach(function (optionValue) {
+                var option = document.createElement('option');
+                option.value = optionValue;
+                option.textContent = optionValue;
+                timeInput.appendChild(option);
+            });
+        }
+        else {
+            timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.name = "times[]";
+        }
         var daysOfWeekContainer = document.createElement('div');
         daysOfWeekContainer.classList.add('days-of-week');
         var days = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'TODOS'];
@@ -22,21 +36,28 @@ document.addEventListener('DOMContentLoaded', function () {
             var checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = day;
-            checkbox.name = "days-".concat(timeInputCount, "[]");
+            checkbox.name = "days-".concat(index, "[]");
             daysOfWeekContainer.appendChild(checkbox);
             daysOfWeekContainer.append(day);
         });
         var errorMessage = document.createElement('span');
         errorMessage.classList.add('error-message');
-        timeInputContainer.appendChild(newTimeInput);
+        timeInputContainer.appendChild(timeInput);
         timeInputContainer.appendChild(daysOfWeekContainer);
         timeInputContainer.appendChild(errorMessage);
-        var deleteButton = document.createElement('button');
-        deleteButton.type = 'button';
-        deleteButton.classList.add('delete-time');
-        deleteButton.textContent = 'Delete';
-        timeInputContainer.appendChild(deleteButton);
-        timeFieldsContainer.appendChild(timeInputContainer);
+        if (index > 0) {
+            var deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.classList.add('delete-time');
+            deleteButton.textContent = 'Delete';
+            timeInputContainer.appendChild(deleteButton);
+        }
+        return timeInputContainer;
+    };
+    addTimeButton.addEventListener('click', function () {
+        var selectedType = frequenciaTipo.value;
+        var newTimeInput = createTimeInputRow(timeInputCount, selectedType);
+        timeFieldsContainer.appendChild(newTimeInput);
         timeInputCount++;
     });
     timeFieldsContainer.addEventListener('click', function (event) {
@@ -50,35 +71,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     var updateTimeInput = function () {
         var selectedValue = frequenciaTipo.value;
-        var timeInputContainer = document.querySelector('.time-input');
-        if (!timeInputContainer)
-            return;
-        var existingTimeInput = timeInputContainer.querySelector('input[type="time"], select');
-        if (existingTimeInput) {
-            existingTimeInput.remove();
-        }
-        if (selectedValue === 'constant') {
-            var select_1 = document.createElement('select');
-            select_1.name = 'times[]';
-            var options = ['15min', '1h', '2h', '4h', '8h'];
-            options.forEach(function (optionValue) {
-                var option = document.createElement('option');
-                option.value = optionValue;
-                option.textContent = optionValue;
-                select_1.appendChild(option);
-            });
-            timeInputContainer.insertBefore(select_1, timeInputContainer.firstChild);
-            addTimeButton.style.display = 'none';
-        }
-        else {
-            var timeInput = document.createElement('input');
-            timeInput.type = 'time';
-            timeInput.name = 'times[]';
-            timeInputContainer.insertBefore(timeInput, timeInputContainer.firstChild);
-            addTimeButton.style.display = 'block';
-        }
+        timeFieldsContainer.innerHTML = ''; // Clear existing fields
+        var initialTimeInput = createTimeInputRow(0, selectedValue);
+        timeFieldsContainer.appendChild(initialTimeInput);
+        timeInputCount = 1; // Reset count
+        addTimeButton.style.display = 'block';
     };
     frequenciaTipo.addEventListener('change', updateTimeInput);
+    // Initialize with one time input row
+    updateTimeInput();
     var generateConstantTimes = function (interval, days) {
         var times = [];
         var value = parseInt(interval);
@@ -148,7 +149,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     };
     var resetForm = function () {
+        var selectedFile = fileInput.files ? fileInput.files[0] : null;
         form.reset();
+        if (selectedFile) {
+            var dataTransfer = new DataTransfer();
+            dataTransfer.items.add(selectedFile);
+            fileInput.files = dataTransfer.files;
+        }
         var timeInputs = timeFieldsContainer.querySelectorAll('.time-input');
         timeInputs.forEach(function (timeInput, index) {
             if (index > 0) {
@@ -184,10 +191,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 if (frequenciaTipo.value === 'constant') {
                     if (hasTodos_1) {
-                        formattedTimes = generateConstantTimes(timeField.value, ['TODOS']);
+                        formattedTimes = formattedTimes.concat(generateConstantTimes(timeField.value, ['TODOS']));
                     }
                     else {
-                        formattedTimes = generateConstantTimes(timeField.value, selectedDays_1);
+                        formattedTimes = formattedTimes.concat(generateConstantTimes(timeField.value, selectedDays_1));
                     }
                 }
                 else {
