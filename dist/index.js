@@ -36,9 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
             var checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = day;
+            checkbox.id = "".concat(day, "-").concat(index);
             checkbox.name = "days-".concat(index, "[]");
+            checkbox.classList.add('chk2');
+            var label = document.createElement('label');
+            label.htmlFor = "".concat(day, "-").concat(index);
+            label.classList.add('chk');
+            label.textContent = day;
             daysOfWeekContainer.appendChild(checkbox);
-            daysOfWeekContainer.append(day);
+            daysOfWeekContainer.appendChild(label);
         });
         var errorMessage = document.createElement('span');
         errorMessage.classList.add('error-message');

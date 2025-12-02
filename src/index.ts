@@ -41,9 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.value = day;
+            checkbox.id = `${day}-${index}`;
             checkbox.name = `days-${index}[]`;
+            checkbox.classList.add('chk2');
+
+            const label = document.createElement('label');
+            label.htmlFor = `${day}-${index}`;
+            label.classList.add('chk');
+            label.textContent = day;
+
             daysOfWeekContainer.appendChild(checkbox);
-            daysOfWeekContainer.append(day);
+            daysOfWeekContainer.appendChild(label);
         });
 
         const errorMessage = document.createElement('span');
